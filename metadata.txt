@@ -1,0 +1,11 @@
+
+[general]
+name=ClippedCloudlessSentinel
+description= Plugin that clip the least cloudy sentinel image 
+	     according to the shapefile and downloads it with the bands and true color image
+version=1.0
+qgisMinimumVersion=3.0
+author=Emin Atabey Peker
+email=your.email@example.com
+icon=icon.png
+category=Raster
