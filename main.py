@@ -88,12 +88,11 @@ class CloudlessImagePlugin:
 
         # Görüntü bilgilerini alma
         info = collection.getInfo()
-        cloud_percentage = info['properties']['CLOUDY_PIXEL_PERCENTAGE']
-        data_type = info['type']
-        bands_info = info['bands']
+        image_name = info['id']
         
-        resolution_info = ", ".join(set([str(band['crs_transform'][0]) + 'm' for band in bands_info]))
-
+        # Sentinel-2 görüntü türü belirleme
+        satellite = info['properties'].get('SPACECRAFT_NAME', '')
+        
         true_color = collection.visualize(bands=['B4', 'B3', 'B2'], min=0, max=3000)
 
         # Her bir bandı ve true color görüntüyü indirme URL'leri
@@ -138,8 +137,8 @@ class CloudlessImagePlugin:
             self.iface.messageBar().pushMessage('Success', 'True color image downloaded successfully!', level=Qgis.Info)
             self.load_raster(true_color_path, 'true_color')
 
-            # Görüntü bilgilerini göster
-            info_message = f"Cloud Percentage: {cloud_percentage}%\nData Type: {data_type}\nResolutions: {resolution_info}"
+            # Görüntü adını ve uyduyu göster
+            info_message = f"Satellite: {satellite}\nImage Name: {image_name}"
             QMessageBox.information(None, 'Image Information', info_message)
 
         except requests.exceptions.RequestException as e:
