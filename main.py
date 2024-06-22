@@ -1,6 +1,5 @@
-
 import os
-from qgis.PyQt.QtWidgets import QAction, QFileDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QDateEdit, QWidget
+from qgis.PyQt.QtWidgets import QAction, QFileDialog, QVBoxLayout, QLineEdit, QPushButton, QLabel, QDateEdit, QWidget, QMessageBox
 from qgis.PyQt.QtGui import QIcon
 from qgis.core import QgsProject, QgsRasterLayer, QgsVectorLayer, Qgis
 import ee
@@ -28,13 +27,9 @@ class CloudlessImagePlugin:
         self.action = QAction(QIcon(icon_path), 'ClippedCloudlessSentinel', self.iface.mainWindow())
         self.action.triggered.connect(self.run)
         self.iface.addToolBarIcon(self.action)
-        # Eğer menüye eklemek isterseniz aşağıdaki satırı ekleyin:
-        # self.iface.addPluginToMenu('ClippedCloudlessSentinel', self.action)
 
     def unload(self):
         self.iface.removeToolBarIcon(self.action)
-        # Eğer menüye eklemek isterseniz aşağıdaki satırı ekleyin:
-        # self.iface.removePluginMenu('ClippedCloudlessSentinel', self.action)
 
     def run(self):
         self.dialog = QWidget()
@@ -91,6 +86,14 @@ class CloudlessImagePlugin:
             .sort('CLOUDY_PIXEL_PERCENTAGE', True) \
             .first()
 
+        # Görüntü bilgilerini alma
+        info = collection.getInfo()
+        cloud_percentage = info['properties']['CLOUDY_PIXEL_PERCENTAGE']
+        data_type = info['type']
+        bands_info = info['bands']
+        
+        resolution_info = ", ".join(set([str(band['crs_transform'][0]) + 'm' for band in bands_info]))
+
         true_color = collection.visualize(bands=['B4', 'B3', 'B2'], min=0, max=3000)
 
         # Her bir bandı ve true color görüntüyü indirme URL'leri
@@ -134,6 +137,10 @@ class CloudlessImagePlugin:
                 file.write(response.content)
             self.iface.messageBar().pushMessage('Success', 'True color image downloaded successfully!', level=Qgis.Info)
             self.load_raster(true_color_path, 'true_color')
+
+            # Görüntü bilgilerini göster
+            info_message = f"Cloud Percentage: {cloud_percentage}%\nData Type: {data_type}\nResolutions: {resolution_info}"
+            QMessageBox.information(None, 'Image Information', info_message)
 
         except requests.exceptions.RequestException as e:
             self.iface.messageBar().pushMessage('Error', f'Failed to download image: {str(e)}', level=Qgis.Critical)
